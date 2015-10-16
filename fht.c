@@ -66,7 +66,7 @@ void fht(uint32_t N, double* u)
  * has high levels of structure) so we deliberately pick taps with as many bits
  * set as possible, to ensure as much bit flipping as possible.
  */
-const uint32_t LIBFHT_TAPS[33] = {
+static const uint32_t LIBFHT_TAPS[33] = {
     0x0, 0x0, 0x3, 0x6, 0xC, 0x1E, 0x39, 0x7E, 0xFA, 0x1FD, 0x3FC, 0x7F4,
     0xFDE, 0x1FFE, 0x3FF3, 0x7FFE, 0xFFF6, 0x1FFF7, 0x3FFF3, 0x7FFE9, 0xFFFFC,
     0x1FFFD9, 0x3FFFF6, 0x7FFFFE, 0xFFFFD7, 0x1FFFFF7, 0x3FFFFDD, 0x7FFFFF1,
@@ -114,5 +114,98 @@ void shuffle_bigger(uint32_t n, double* b, uint32_t N, double* a, uint32_t lfsr)
         else
             lfsr >>= 1;
         a[lfsr] = b[i];
+    }
+}
+
+
+/*
+ * Alternative approach to shuffling that is somewhat more sophisticated but
+ * hopefully yields better results and allows for a greater diversity of
+ * identically-sized transforms.
+ *
+ * The basic gist is to use an XorShift128+ generator instead of an LFSR, and
+ * then use the Floyd algorithm to generate a random set of indicies. Since
+ * this requires random numbers in an arbitrary [0, n) range, use a rejection
+ * sampling approach to remove modulus-induced bias.
+ *
+ * It's upsetting that LFSRs are such a perfect match for this in all ways
+ * except random quality.
+ */
+
+/* XorShift128+ from http://xorshift.di.unimi.it/xorshift128plus.c */
+static uint64_t xorshift128p(uint64_t s[])
+{
+    uint64_t s1 = s[0];
+    uint64_t s0 = s[1];
+    s[0] = s0;
+    s1 ^= s1 << 23;
+    return (s[1] = (s1 ^ s0 ^ (s1 >> 17) ^ (s0 >> 26))) + s0;
+}
+
+/* Run the XorShift128+ generator, discarding any values sufficiently small,
+ * so as to remove bias induced by performing modulo with a bound not a
+ * multiple of the generator maximum.
+ * NB for later: xorshift128p will return numbers [1, 2^64), i.e. never 0.
+ * This thresholding business assumes 0 might be returned. Need to check
+ * what bias this introduces. Might be able to just subtract 1 from th.
+ */
+static uint64_t xsrand(uint64_t j, uint64_t s[])
+{
+    uint64_t r, th = -j % j;
+    while((r = xorshift128p(s)) < th);
+    return r % j;
+}
+
+static uint64_t floyd(uint64_t i, uint64_t n, uint64_t N,
+                      uint8_t used[], uint64_t s[])
+{
+    uint64_t j = i + 1 + N - n;
+    uint64_t r = xsrand(j, s);
+    if(used[r])
+        r = j;
+    used[r] = 1;
+    return r;
+}
+
+/*
+ * Shuffle a (of length N) into b (of length n) in a random order.
+ * N MUST be a power of 2
+ * n may be any integer n < M
+ * a[0] will never be used.
+ *
+ * used[] is an n-long array set to all 0s when this function is called.
+ * seed0 and seed1 are unitformly distributed 64-bit numbers used as seeds.
+ */
+void shuffle_smaller_xs(uint32_t N, double* a, uint32_t n, double* b,
+                        uint8_t used[], uint64_t seed0, uint64_t seed1)
+{
+    uint64_t i, r;
+    uint64_t s[2] = {seed0, seed1};
+
+    for(i=0; i<n; i++) {
+        r = floyd(i, n, N, used, s);
+        b[i] = a[r];
+    }
+}
+
+/*
+ * Shuffle b (of length n) into a (of length N) in a random order,
+ * not changing the other elements of a.
+ * N MUST be a power of 2
+ * n may be any integer n < M
+ * a[0] will never be assigned
+ *
+ * used[] is an n-long array set to all 0s when this function is called.
+ * seed0 and seed1 are unitformly distributed 64-bit numbers used as seeds.
+ */
+void shuffle_bigger_xs(uint32_t n, double* b, uint32_t N, double* a,
+                       uint8_t used[], uint64_t seed0, uint64_t seed1)
+{
+    uint64_t i, r;
+    uint64_t s[2] = {seed0, seed1};
+
+    for(i=0; i<n; i++) {
+        r = floyd(i, n, N, used, s);
+        a[r] = b[i];
     }
 }
