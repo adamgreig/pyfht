@@ -66,7 +66,7 @@ void fht(uint32_t N, double* u)
  * has high levels of structure) so we deliberately pick taps with as many bits
  * set as possible, to ensure as much bit flipping as possible.
  */
-uint32_t TAPS[33] = {
+const uint32_t LIBFHT_TAPS[33] = {
     0x0, 0x0, 0x3, 0x6, 0xC, 0x1E, 0x39, 0x7E, 0xFA, 0x1FD, 0x3FC, 0x7F4,
     0xFDE, 0x1FFE, 0x3FF3, 0x7FFE, 0xFFF6, 0x1FFF7, 0x3FFF3, 0x7FFE9, 0xFFFFC,
     0x1FFFD9, 0x3FFFF6, 0x7FFFFE, 0xFFFFD7, 0x1FFFFF7, 0x3FFFFDD, 0x7FFFFF1,
@@ -83,7 +83,7 @@ void shuffle_smaller(uint32_t N, double* a, uint32_t n, double* b, uint32_t lfsr
 {
     uint32_t i;
     uint8_t z = ffs(N) - 1;
-    uint32_t tap = TAPS[z];
+    uint32_t tap = LIBFHT_TAPS[z];
 
     for(i=0; i<n; i++) {
         if(lfsr & 1)
@@ -106,10 +106,11 @@ void shuffle_bigger(uint32_t n, double* b, uint32_t N, double* a, uint32_t lfsr)
 {
     uint32_t i;
     uint8_t z = ffs(N) - 1;
+    uint32_t tap = LIBFHT_TAPS[z];
 
     for(i=0; i<n; i++) {
         if(lfsr & 1)
-            lfsr = (lfsr >> 1) ^ TAPS[z];
+            lfsr = (lfsr >> 1) ^ tap;
         else
             lfsr >>= 1;
         a[lfsr] = b[i];
