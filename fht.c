@@ -79,17 +79,19 @@ static const uint32_t LIBFHT_TAPS[33] = {
  * lfsr is a seed, must 1<=lfsr<N
  * NB a[0] will never be used
  */
-void shuffle_smaller(uint32_t N, double* a, uint32_t n, double* b, uint32_t lfsr)
+void shuffle_smaller_lfsr(uint32_t N, double* a, uint32_t n, double* b, uint32_t lfsr)
 {
-    uint32_t i;
+    uint32_t i, j;
     uint8_t z = ffs(N) - 1;
     uint32_t tap = LIBFHT_TAPS[z];
 
     for(i=0; i<n; i++) {
-        if(lfsr & 1)
-            lfsr = (lfsr >> 1) ^ tap;
-        else
-            lfsr >>= 1;
+        for(j=0; j<z; j++) {
+            if(lfsr & 1)
+                lfsr = (lfsr >> 1) ^ tap;
+            else
+                lfsr >>= 1;
+        }
         b[i] = a[lfsr];
     }
 }
@@ -102,17 +104,19 @@ void shuffle_smaller(uint32_t N, double* a, uint32_t n, double* b, uint32_t lfsr
  * lfsr is a seed, must 1<=lfsr<N
  * NB a[0] will never be assigned
  */
-void shuffle_bigger(uint32_t n, double* b, uint32_t N, double* a, uint32_t lfsr)
+void shuffle_bigger_lfsr(uint32_t n, double* b, uint32_t N, double* a, uint32_t lfsr)
 {
-    uint32_t i;
+    uint32_t i, j;
     uint8_t z = ffs(N) - 1;
     uint32_t tap = LIBFHT_TAPS[z];
 
     for(i=0; i<n; i++) {
-        if(lfsr & 1)
-            lfsr = (lfsr >> 1) ^ tap;
-        else
-            lfsr >>= 1;
+        for(j=0; j<z; j++) {
+            if(lfsr & 1)
+                lfsr = (lfsr >> 1) ^ tap;
+            else
+                lfsr >>= 1;
+        }
         a[lfsr] = b[i];
     }
 }
@@ -209,3 +213,41 @@ void shuffle_bigger_xs(uint32_t n, double* b, uint32_t N, double* a,
         a[r] = b[i];
     }
 }
+
+
+/*
+ * One other technique. Just accept a list with the required order. Obvious.
+ */
+
+
+/*
+ * Shuffle a (of length N) into b (of length n) in a specified order.
+ * N MUST be a power of 2
+ * n may be any integer n < M
+ * order[] is an n-long list of the order in which to insert, don't put 0 in.
+ */
+void shuffle_smaller_o(uint32_t N, double* a, uint32_t n, double* b,
+                       uint32_t order[])
+{
+    uint64_t i;
+    for(i=0; i<n; i++) {
+        b[i] = a[order[i]];
+    }
+}
+
+/*
+ * Shuffle b (of length n) into a (of length N) in a specified order,
+ * not changing the other elements of a.
+ * N MUST be a power of 2
+ * n may be any integer n < M
+ * order[] is an n-long list of the order in which to insert, don't put 0 in.
+ */
+void shuffle_bigger_o(uint32_t n, double* b, uint32_t N, double* a,
+                      uint32_t order[])
+{
+    uint64_t i;
+    for(i=0; i<n; i++) {
+        a[order[i]] = b[i];
+    }
+}
+
