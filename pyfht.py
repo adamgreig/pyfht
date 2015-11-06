@@ -168,14 +168,14 @@ def block_sub_fht(n, m, l, seed=0, ordering=None):
         rng = random.Random(seed)
         ordering = np.empty((l, n), dtype=np.uint32)
         for ll in range(l):
-            ordering[l] = np.array(rng.sample(range(1, m), n))
+            ordering[ll] = np.array(rng.sample(range(1, m), n))
 
     def Ax(x):
         assert x.size == l*m
         out = np.zeros(n)
         for ll in range(l):
             ax, ay, _ = sub_fht(n, m, ordering=ordering[ll])
-            out += ax(x[l*m:(l+1):m])
+            out += ax(x[ll*m:(ll+1)*m])
         return out
 
     def Ay(y):
@@ -183,7 +183,7 @@ def block_sub_fht(n, m, l, seed=0, ordering=None):
         out = np.empty(l*m)
         for ll in range(l):
             ax, ay, _ = sub_fht(n, m, ordering=ordering[ll])
-            out[l*m:(l+1)*m] = ay(y)
+            out[ll*m:(ll+1)*m] = ay(y)
         return out
 
     return Ax, Ay, ordering
