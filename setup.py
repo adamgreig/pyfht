@@ -5,7 +5,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='pyfht',
-    version='1.2.0',
+    version='1.3.0',
     author='Adam Greig',
     author_email='adam@adamgreig.com',
     url='https://github.com/adamgreig/pyfht',
