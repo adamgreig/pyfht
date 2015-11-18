@@ -98,8 +98,10 @@ def sub_fht(n, m, seed=0, ordering=None):
     Returns functions to compute the sub-sampled Walsh-Hadamard transform,
     i.e., operating with a wide rectangular matrix of random +/-1 entries.
 
-    n: number of rows (smaller dimension), must be smaller than m
-    m: number of columns (larger dimension), must be a power of two
+    n: number of rows (smaller dimension)
+    m: number of columns (larger dimension)
+
+    The larger of (n, m) must be a power of two.
 
     seed: determines choice of random matrix
     order: optional n-long array of row indices to implement subsampling;
@@ -113,8 +115,10 @@ def sub_fht(n, m, seed=0, ordering=None):
     """
     assert n > 0
     assert m > 0
-    assert n < m
-    assert m & (m-1) == 0
+    if m > n:
+        assert m & (m-1) == 0
+    else:
+        assert n & (n-1) == 0
 
     if ordering is not None:
         assert ordering.shape == (n,)
@@ -122,18 +126,25 @@ def sub_fht(n, m, seed=0, ordering=None):
         rng = random.Random(seed)
         ordering = np.array(rng.sample(range(1, m), n), dtype=np.uint32)
 
-    def Ax(x):
+    def transform_subsample(x):
         assert x.size == m
         x = x.copy().reshape(m)
         _fht(m, x)
         return x[ordering]
 
-    def Ay(y):
-        assert y.size == n
+    def embed_transform(x):
+        assert x.size == n
         out = np.zeros(m)
-        out[ordering] = y
+        out[ordering] = x
         _fht(m, out)
         return out
+
+    if m > n:
+        Ax = transform_subsample
+        Ay = embed_transform
+    else:
+        Ax = embed_transform
+        Ay = transform_subsample
 
     return Ax, Ay, ordering
 
@@ -142,9 +153,11 @@ def block_sub_fht(n, m, l, seed=0, ordering=None):
     As `sub_fht`, but computes in `l` blocks of size `n` by `m`, potentially
     offering substantial speed improvements.
 
-    n: number of rows, must be smaller than m
-    m: number of columns per block, must be a power of two
+    n: number of rows
+    m: number of columns per block
     l: number of blocks
+
+    The larger of (n, m) must be a power of two.
 
     seed: determines choice of random matrix
     ordering: optional (l, n) shaped array of row indices to implement
@@ -159,8 +172,10 @@ def block_sub_fht(n, m, l, seed=0, ordering=None):
     assert n > 0
     assert m > 0
     assert l > 0
-    assert n < m
-    assert m & (m-1) == 0
+    if m > n:
+        assert m & (m-1) == 0
+    else:
+        assert n & (n-1) == 0
 
     if ordering is not None:
         assert ordering.shape == (l, n)
