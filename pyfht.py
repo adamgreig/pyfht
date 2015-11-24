@@ -99,8 +99,7 @@ def sub_fht(n, m, seed=0, ordering=None):
     n: number of rows
     m: number of columns
 
-    It is most efficient (but not required) for max(m,n) to be a power of two.
-    n and m may not be equal.
+    It is most efficient (but not required) for max(m,n+1) to be a power of 2.
 
     seed: determines choice of random matrix
     ordering: optional n-long array of row indices in [1, max(m,n)] to
@@ -114,7 +113,6 @@ def sub_fht(n, m, seed=0, ordering=None):
     """
     assert n > 0, "n must be positive"
     assert m > 0, "m must be positive"
-    assert m != n, "m and n must not be equal"
     w = 2**int(np.ceil(np.log2(max(m, n+1))))
 
     if ordering is not None:
@@ -151,8 +149,7 @@ def block_sub_fht(n, m, l, seed=0, ordering=None):
     m: number of columns per block
     l: number of blocks
 
-    It is most efficient (though not required) when max(m,n) is a power of two.
-    n and m may not be equal.
+    It is most efficient (though not required) when max(m,n+1) is a power of 2.
 
     seed: determines choice of random matrix
     ordering: optional (l, n) shaped array of row indices in [1, max(m, n)] to
@@ -167,7 +164,6 @@ def block_sub_fht(n, m, l, seed=0, ordering=None):
     assert n > 0, "n must be positive"
     assert m > 0, "m must be positive"
     assert l > 0, "l must be positive"
-    assert m != n, "m and n must not be equal"
 
     if ordering is not None:
         assert ordering.shape == (l, n)
