@@ -10,11 +10,11 @@
 void fht(uint32_t N, double* u)
 {
     double temp;
-    uint32_t i, j;
+    uint32_t i, j, k, ij;
 
     for(i=N>>1; i>0; i>>=1) {
-        for(j=0; j<N; j++) {
-            if((i & j) == 0) {
+        for(k=0; k<N; k += 2*i) {
+            for(j=k, ij=i+k; j<k+i; j++, ij++) {
                 temp   = u[j];
                 u[j]  += u[i|j];
                 u[i|j] = temp - u[i|j];

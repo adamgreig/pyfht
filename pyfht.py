@@ -91,6 +91,14 @@ def fht(x):
     return out
 
 
+def fht_inplace(x):
+    """
+    Compute the Walsh-Hadamard transform of x, in place.
+    x must be a 1d array with length a power of 2.
+    """
+    _fht(x.size, x)
+
+
 def sub_fht(n, m, seed=0, ordering=None):
     """
     Returns functions to compute the sub-sampled Walsh-Hadamard transform,
