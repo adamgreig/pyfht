@@ -16,8 +16,8 @@ void fht(uint32_t N, double* u)
         for(k=0; k<N; k += 2*i) {
             for(j=k, ij=i+k; j<k+i; j++, ij++) {
                 temp   = u[j];
-                u[j]  += u[i|j];
-                u[i|j] = temp - u[i|j];
+                u[j]  += u[ij];
+                u[ij] = temp - u[ij];
             }
         }
     }
